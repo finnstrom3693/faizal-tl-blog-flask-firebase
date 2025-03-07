@@ -1,0 +1,6 @@
+flask
+firebase-admin
+bcrypt
+pyjwt
+pytz
+flask-cors

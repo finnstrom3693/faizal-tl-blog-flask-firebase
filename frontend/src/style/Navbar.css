@@ -1,0 +1,9 @@
+.custom-navbar-brand {
+    margin-left: 200px;
+}
+
+@media (max-width: 576px) { /* Small screens */
+    .custom-navbar-brand {
+        margin-left: 5px;
+    }
+}

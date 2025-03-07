@@ -1,0 +1,76 @@
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import axios from "axios";
+import DOMPurify from "dompurify";
+
+const API_URL = "http://127.0.0.1:5000/posts";
+const POSTS_PER_PAGE = 5;
+
+const BlogList = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [blogs, setBlogs] = useState([]);
+  const [filtered, setFiltered] = useState([]);
+  const [visible, setVisible] = useState([]);
+  const [page, setPage] = useState(1);
+  const observer = useRef(null);
+
+  useEffect(() => { fetchBlogs(); }, []);
+  useEffect(() => { setFiltered(blogs); setVisible(blogs.slice(0, POSTS_PER_PAGE)); }, [blogs]);
+
+  const fetchBlogs = async () => {
+    try {
+      const res = await axios.get(API_URL);
+      setBlogs(res.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+    } catch (error) { console.error("Fetch error:", error); }
+  };
+
+  const handleSearch = (e) => {
+    const val = e.target.value.toLowerCase();
+    setSearchTerm(val);
+    const result = blogs.filter(b => b.title.toLowerCase().includes(val) || b.content.toLowerCase().includes(val));
+    setFiltered(result); setVisible(result.slice(0, POSTS_PER_PAGE)); setPage(1);
+  };
+
+  const loadMore = () => {
+    const next = page + 1;
+    setVisible(filtered.slice(0, next * POSTS_PER_PAGE));
+    setPage(next);
+  };
+
+  const lastRef = useCallback(node => {
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && visible.length < filtered.length) loadMore();
+    });
+    if (node) observer.current.observe(node);
+  }, [filtered, visible]);
+
+  // Truncate function to limit content to 64 words
+  const truncate = (text) => {
+    const words = text.split(" ");
+    if (words.length > 64) {
+      return DOMPurify.sanitize(words.slice(0, 64).join(" ") + "...");
+    }
+    return DOMPurify.sanitize(text);
+  };
+  
+  return (
+    <div className="container mt-4">
+      <input type="text" className="form-control mb-3" placeholder="Search" value={searchTerm} onChange={handleSearch} />
+      <div className="row">
+        {visible.length > 0 ? visible.map((b, i) => (
+          <div key={b.id} className="col-md-12 mb-3" ref={i === visible.length - 1 ? lastRef : null}>
+            <div className="card">
+              <div className="card-body">
+                <h5 className="card-title">{b.title}</h5>
+                <p className="card-text" dangerouslySetInnerHTML={{ __html: truncate(b.content) }}></p>
+                <a href={`/post/${b.id}`} className="btn btn-primary mt-auto">Read More</a>
+              </div>
+            </div>
+          </div>
+        )) : <div className="col-md-12 text-center">No blogs.</div>}
+      </div>
+    </div>
+  );
+};
+
+export default BlogList;
