@@ -8,6 +8,33 @@ const EditPostAdmin = () => {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+  useEffect(() => {
+      const token = localStorage.getItem("token");
+  
+      if (!token) {
+        navigate("/login"); 
+        return;
+      }
+  
+      fetch(`${API_BASE_URL}/protected`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`, 
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Unauthorized");
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem("token"); 
+          navigate("/login"); 
+        });
+  }, [navigate]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -18,7 +45,7 @@ const EditPostAdmin = () => {
     }
 
     // Fetch existing post by ID
-    fetch(`http://localhost:5000/posts/${id}`, {
+    fetch(`${API_BASE_URL}/posts/${id}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -55,7 +82,7 @@ const EditPostAdmin = () => {
     const updatedPost = { title, content, writer };
 
     try {
-      const response = await fetch(`http://localhost:5000/posts/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/posts/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

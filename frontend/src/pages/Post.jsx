@@ -6,10 +6,11 @@ const Post = () => {
   const { id } = useParams();
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
   useEffect(() => {
     axios
-      .get(`http://127.0.0.1:5000/posts/${id}`)
+      .get(`${API_BASE_URL}/posts/${id}`)
       .then((response) => {
         setBlog(response.data);
         setLoading(false);

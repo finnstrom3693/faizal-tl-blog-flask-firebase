@@ -7,6 +7,7 @@ import MobileSidebar from "../components/MobileSidebar";
 function PostsAdmin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -16,7 +17,7 @@ function PostsAdmin() {
       return;
     }
 
-    fetch("http://localhost:5000/protected", {
+    fetch(`${API_BASE_URL}/protected`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,

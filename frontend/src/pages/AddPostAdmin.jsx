@@ -7,19 +7,21 @@ const AddPostAdmin = () => {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+  
 
   useEffect(() => {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      navigate("/login"); // Redirect to login if no token
+      navigate("/login"); 
       return;
     }
 
-    fetch("http://localhost:5000/protected", {
+    fetch(`${API_BASE_URL}/protected`, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${token}`, // Fix token format
+        "Authorization": `Bearer ${token}`, 
         "Content-Type": "application/json",
       },
     })
@@ -29,8 +31,8 @@ const AddPostAdmin = () => {
         }
       })
       .catch(() => {
-        localStorage.removeItem("token"); // Clear invalid token
-        navigate("/login"); // Redirect to login if auth fails
+        localStorage.removeItem("token"); 
+        navigate("/login"); 
       });
   }, [navigate]);
 
@@ -49,7 +51,7 @@ const AddPostAdmin = () => {
     const newPost = { title, content, writer };
 
     try {
-      const response = await fetch("http://localhost:5000/posts", {
+      const response = await fetch(`${API_BASE_URL}/posts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

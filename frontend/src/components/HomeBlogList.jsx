@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Link } from 'react-router-dom'; // Import Link from react-router-dom
+import { Link } from 'react-router-dom';
+
 
 const HomeBlogList = () => {
     const [blogs, setBlogs] = useState([]);
     const [showAll, setShowAll] = useState(false);
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
     useEffect(() => {
         fetchBlogs();
@@ -12,7 +14,7 @@ const HomeBlogList = () => {
 
     const fetchBlogs = async () => {
         try {
-            const response = await axios.get("http://127.0.0.1:5000/posts");
+            const response = await axios.get(`${API_BASE_URL}/posts`);
             // Sort blogs by created_at in descending order (latest first)
             const sortedBlogs = response.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             setBlogs(sortedBlogs);

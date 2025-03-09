@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import DOMPurify from "dompurify";
 
-const API_URL = "http://127.0.0.1:5000/posts";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+const API_URL = `${API_BASE_URL}/posts`;
 const POSTS_PER_PAGE = 5;
 
 const BlogList = () => {

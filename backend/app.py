@@ -51,7 +51,90 @@ def token_required(f):
         return f(*args, **kwargs)
     return decorated
 
+# Create a backup
+@app.route("/backup", methods=["GET"])
+@token_required
+def backup():
+    if request.user_role != "owner":
+        return jsonify({"error": "Permission denied"}), 403
+    
+    users = [doc.to_dict() | {"id": doc.id} for doc in db.collection(USER_COLLECTION).stream()]
+    blogs = [doc.to_dict() | {"id": doc.id} for doc in db.collection(BLOG_COLLECTION).stream()]
+    
+    return jsonify({"users": users, "blogs": blogs}), 200
 
+# Restore from backup
+@app.route("/restore", methods=["POST"])
+@token_required
+def restore_backup():
+    # Check if user has owner role
+    if request.user_role != "owner":
+        return jsonify({"error": "Permission denied. Only owners can restore backups"}), 403
+    
+    # Get backup data from request
+    backup_data = request.json
+    
+    # Validate backup data structure
+    if not isinstance(backup_data, dict) or "users" not in backup_data or "blogs" not in backup_data:
+        return jsonify({"error": "Invalid backup format"}), 400
+    
+    try:
+        # Start a batch operation for atomicity
+        batch = db.batch()
+        
+        # Clear existing collections (optional - you may want to confirm this behavior)
+        # Delete existing blogs
+        blog_docs = db.collection(BLOG_COLLECTION).stream()
+        for doc in blog_docs:
+            batch.delete(doc.reference)
+            
+        # Delete existing users
+        user_docs = db.collection(USER_COLLECTION).stream()
+        for doc in user_docs:
+            batch.delete(doc.reference)
+        
+        # Restore users
+        for user in backup_data["users"]:
+            user_id = user.pop("id", None)  # Extract and remove id from the dict
+            if user_id:
+                user_ref = db.collection(USER_COLLECTION).document(user_id)
+                batch.set(user_ref, user)
+            else:
+                # If no ID, create with auto-generated ID
+                new_user_ref = db.collection(USER_COLLECTION).document()
+                batch.set(new_user_ref, user)
+        
+        # Restore blogs
+        for blog in backup_data["blogs"]:
+            blog_id = blog.pop("id", None)  # Extract and remove id from the dict
+            
+            # Convert timestamp strings back to Firestore timestamps if needed
+            if "created_at" in blog and isinstance(blog["created_at"], str):
+                # Parse the timestamp string to datetime
+                try:
+                    # Try to parse ISO format
+                    created_at = datetime.datetime.fromisoformat(blog["created_at"].replace('Z', '+00:00'))
+                    # Convert to Jakarta timezone if needed
+                    blog["created_at"] = created_at.astimezone(jakarta_tz)
+                except ValueError:
+                    # Keep as string if parsing fails
+                    pass
+            
+            if blog_id:
+                blog_ref = db.collection(BLOG_COLLECTION).document(blog_id)
+                batch.set(blog_ref, blog)
+            else:
+                # If no ID, create with auto-generated ID
+                new_blog_ref = db.collection(BLOG_COLLECTION).document()
+                batch.set(new_blog_ref, blog)
+        
+        # Commit all the changes
+        batch.commit()
+        
+        return jsonify({"message": "Backup restored successfully"}), 200
+    
+    except Exception as e:
+        return jsonify({"error": f"Failed to restore backup: {str(e)}"}), 500
 
 # Create a new blog post
 @app.route("/posts", methods=["POST"])
