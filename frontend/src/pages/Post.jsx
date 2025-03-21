@@ -28,7 +28,7 @@ const Post = () => {
           <div className="spinner-border text-primary"></div>
         </div>
       ) : blog ? (
-        <div className="card shadow-sm">
+        <div className="card shadow-sm mb-3">
           <div className="card-body">
             <h2 className="card-title">{blog.title}</h2>
             {/* ✅ Render HTML safely */}
