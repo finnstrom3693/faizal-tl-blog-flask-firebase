@@ -209,6 +209,29 @@ def delete_post(post_id):
     doc_ref.delete()
     return jsonify({"message": "Post deleted"})
 
+# Search blog posts by title or content
+@app.route("/posts/search", methods=["GET"])
+def search_posts():
+    query = request.args.get("q", "").lower()
+
+    if not query:
+        return jsonify({"error": "Search query parameter 'q' is required"}), 400
+
+    matching_posts = []
+    posts = db.collection(BLOG_COLLECTION).stream()
+
+    for doc in posts:
+        post = doc.to_dict()
+        title = post.get("title", "").lower()
+        content = post.get("content", "").lower()
+
+        if query in title or query in content:
+            post["id"] = doc.id
+            matching_posts.append(post)
+
+    return jsonify(matching_posts), 200
+
+
 # Register a new user
 @app.route("/register", methods=["POST"])
 def register():

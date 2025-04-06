@@ -24,11 +24,25 @@ const BlogList = () => {
     } catch (error) { console.error("Fetch error:", error); }
   };
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     const val = e.target.value.toLowerCase();
     setSearchTerm(val);
-    const result = blogs.filter(b => b.title.toLowerCase().includes(val) || b.content.toLowerCase().includes(val));
-    setFiltered(result); setVisible(result.slice(0, POSTS_PER_PAGE)); setPage(1);
+    setPage(1); // reset pagination
+  
+    if (val === "") {
+      // Empty search, fetch all blogs again
+      fetchBlogs();
+      return;
+    }
+  
+    try {
+      const res = await axios.get(`${API_URL}/search?q=${encodeURIComponent(val)}`);
+      const sorted = res.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setFiltered(sorted);
+      setVisible(sorted.slice(0, POSTS_PER_PAGE));
+    } catch (error) {
+      console.error("Search fetch error:", error);
+    }
   };
 
   const loadMore = () => {
